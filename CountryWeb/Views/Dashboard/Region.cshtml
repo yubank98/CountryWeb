@@ -1,0 +1,154 @@
+﻿@model List<CountryWeb.Models.Country>
+@using Newtonsoft.Json
+
+@{
+    ViewBag.Title = "Country Details";
+}
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<div class="row">
+    <div class="dropdown">
+        <h1 id="regionTitle">Busqueda por Región: America</h1>
+        <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Regiones
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" data-region="africa">Africa</a></li>
+            <li><a class="dropdown-item active" href="#" data-region="americas">America</a></li>
+            <li><a class="dropdown-item" href="#" data-region="asia">Asia</a></li>
+            <li><a class="dropdown-item" href="#" data-region="europe">Europa</a></li>
+            <li><a class="dropdown-item" href="#" data-region="oceania">Oceanica</a></li>
+        </ul>
+    </div>
+    <div class="table-responsive mt-3">
+        <table id="countryTable" class="table table-hover table-sm">
+            <thead>
+                <tr>
+                    <th>Nombre común</th>
+                    <th>Nombre oficial</th>
+                    <th>Independiente</th>
+                    <th>Región</th>
+                    <th>Subregión</th>
+                    <th>Población</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal fade" id="countryModal" tabindex="-1" role="dialog" aria-labelledby="countryModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="countryModalLabel">Detalles</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="card-body">
+                        <h5 class="card-title">Mapa y Detalles</h5>
+                        <div id="mapa" style="height: 300px; background-color: #f8f9fc;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            var countriesData;
+
+            var countryTable = $('#countryTable').DataTable({
+                "paging": true,
+                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+                "pageLength": 10
+            });
+
+            // Función para cargar países por región
+            function loadCountriesByRegion(region, regionName) {
+                $('#regionTitle').text('Busqueda por Región: ' + regionName);
+                $.ajax({
+                    url: '@Url.Action("GetCountriesByRegion", "Dashboard")',
+                    type: 'GET',
+                    data: { regionName: region },
+                    success: function (response) {
+                        countriesData = response;
+                        countryTable.clear().draw();
+                        response.forEach(function (countryData) {
+                            var newRow = [
+                                countryData.name.common,
+                                countryData.name.official,
+                                countryData.independent ? "Sí" : "No",
+                                countryData.region,
+                                countryData.subregion,
+                                countryData.population,
+                                '<button type="button" class="btn btn-primary view-details" data-toggle="modal" data-target="#countryModal" data-country="' + countryData.name.common + '">Ver más</button>'
+                            ];
+                            countryTable.row.add(newRow).draw(false);
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Error al cargar los países');
+                    }
+                });
+            }
+
+            // Cargar países de América al inicio
+            loadCountriesByRegion('americas', 'América');
+
+            // Manejar clic en elementos del menú desplegable
+            $('.dropdown-item').click(function (e) {
+                e.preventDefault();
+                var region = $(this).data('region');
+                var regionName = $(this).text();
+                loadCountriesByRegion(region, regionName);
+            });
+
+            $(document).on('click', '.view-details', function () {
+                var countryName = $(this).data('country');
+                var countryData = countriesData.find(c => c.name.common === countryName);
+                $('#countryModalLabel').text('Detalles de ' + countryData.name.common);
+
+                var mapContainer = document.getElementById('mapa');
+
+                // Destruir el mapa existente si ya está inicializado
+                if (mapContainer._leaflet_id) {
+                    mapContainer._leaflet_id = null;
+                }
+
+                // Eliminar todos los hijos del contenedor de mapa
+                while (mapContainer.firstChild) {
+                    mapContainer.removeChild(mapContainer.firstChild);
+                }
+
+                // Crear un nuevo contenedor para el mapa
+                var newMapContainer = document.createElement('div');
+                newMapContainer.id = 'mapa';
+                newMapContainer.style.height = '300px';
+                newMapContainer.style.width = '100%';
+                mapContainer.appendChild(newMapContainer);
+
+                // Inicializar un nuevo mapa con la información del país
+                var mymap = L.map(newMapContainer).setView([countryData.latlng[0], countryData.latlng[1]], 6);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                }).addTo(mymap);
+            });
+        });
+    </script>
+}
+

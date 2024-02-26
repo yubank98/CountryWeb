@@ -1,0 +1,41 @@
+﻿
+@model CountryWeb.Models.Country;
+@{
+    ViewData["Title"] = "Region";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="container">
+        <h1>@ViewData["Title"]</h1>
+        @using (Html.BeginForm("Region", "Home", FormMethod.Get))
+        {
+            <div class="mb-3">
+                <label for="countryName" class="form-label">Buscar Region:</label>
+                <input type="text" id="RegionName" name="RegionName" class="form-control">
+                <button type="submit" class="btn btn-primary mt-3">Buscar</button>
+            </div>
+        }
+
+
+
+
+
+
+    </div>
+
+</body>
+<!-- Bootstrap JS (optional) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-+S25m2jKfWqSnChKv9OKOW5nmXzCxZaiujUJQwnphDn1U1FMcr5MWL/fiCOO3G25" crossorigin="anonymous"></script>
+</html>
+
+

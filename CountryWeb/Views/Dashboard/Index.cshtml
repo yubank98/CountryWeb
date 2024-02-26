@@ -1,0 +1,213 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@model CountryWeb.Models.Country
+
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Buscar País</h1>
+</div>
+
+<!-- Content Row -->
+<div class="row">
+
+    <div class="col-12 mb-4">
+        @using (Html.BeginForm("Index", "Dashboard", FormMethod.Get))
+        {
+            <div class="input-group">
+                <input type="text" id="countryInput" list="countries" name="countryName" class="form-control" placeholder="Buscar país...">
+                <datalist id="countries">
+                    @foreach (var country in Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(ViewBag.CountriesJson))
+                    {
+                        <option value="@country"></option>
+                    }
+                </datalist>
+                <button type="submit" class="btn btn-primary">Buscar</button>
+            </div>
+        }
+    </div>
+
+    <!-- Datos del país -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow h-100 py-2">
+            <div class="card-body">
+                <h5 class="card-title">Datos del País</h5>
+                <dl class="row">
+                    <dt class="col-sm-4">Nombre Común:</dt>
+                    <dd class="col-sm-8">@(Model != null && Model.Name != null ? Model.Name.Common : "")</dd>
+
+                    <dt class="col-sm-4">Nombre Oficial:</dt>
+                    <dd class="col-sm-8"> @(Model != null && Model.Name != null ? Model.Name.Official : "")</dd>
+
+                    <dt class="col-sm-4">Códigos:</dt>
+                    <dd class="col-sm-8"> @(Model != null && Model.Cioc != null ? Model.Cioc : "")</dd>
+
+                    <dt class="col-sm-4">Independiente:</dt>
+                    <dd class="col-sm-8"> @(Model != null && Model.Independent != null ? Model.Independent : "")</dd>
+
+                    <dt class="col-sm-4">País miembro de la ONU:</dt>
+                    <dd class="col-sm-8"> @(Model != null && Model.UnMember != null ? Model.UnMember : "")</dd>
+
+                    <dt class="col-sm-4">Monedas:</dt>
+                    <dd class="col-sm-8">
+                        @if (Model != null && Model.Currencies != null)
+                        {
+                            foreach (var currency in Model.Currencies)
+                            {
+                                <text>@currency.Value.Symbol : @currency.Value.Name <br /></text>
+                            }
+                        }
+                    </dd>
+
+                    <dt class="col-sm-4">Códigos IDD:</dt>
+                    <dd class="col-sm-8">
+                        @if (Model != null && Model.Idd != null)
+                        {
+                            @Model.Idd.Root
+                            string.Join(", ", Model.Idd.Suffixes);
+                        }
+                    </dd>
+
+                    <dt class="col-sm-4">Capital:</dt>
+                    <dd class="col-sm-8">@(Model != null && Model.Capital != null ? string.Join(" ", Model.Capital) : "")</dd>
+
+                    <dt class="col-sm-4">Región:</dt>
+                    <dd class="col-sm-8">@(Model != null && Model.Region != null ? Model.Region : "")</dd>
+
+                    <dt class="col-sm-4">Subregión:</dt>
+                    <dd class="col-sm-8">@(Model != null && Model.Subregion != null ? Model.Subregion : "")</dd>
+
+                    <dt class="col-sm-4">Idiomas:</dt>
+                    <dd class="col-sm-8">
+                        @if (Model != null && Model.Languages != null)
+                        {
+                            foreach (var language in Model.Languages)
+                            {
+                                <text>@language.Value <br /></text>
+                            }
+                        }
+                    </dd>
+
+                    <dt class="col-sm-4">Latitud y Longitud:</dt>
+                    <dd class="col-sm-8">@(Model != null && Model.Latlng != null ? string.Join(", ", Model.Latlng) : "")</dd>
+
+                    <dt class="col-sm-4">Fronteras:</dt>
+                    <dd class="col-sm-8">@(Model != null && Model.Borders != null ? string.Join(", ", Model.Borders) : "")</dd>
+
+                    <dt class="col-sm-4">Área:</dt>
+                    <dd class="col-sm-8">@(Model != null && Model.Area != null ? Model.Area : "")</dd>
+
+                    <dt class="col-sm-4">Gentilicios:</dt>
+                    <dd class="col-sm-8">
+                        @if (Model != null && Model.Demonyms != null)
+                        {
+                            @foreach (var demonym in Model.Demonyms.GetType().GetProperties())
+                            {
+                                @demonym.Name
+
+                                @: @demonym.GetValue(Model.Demonyms)?.GetType().GetProperty("Common")?.GetValue(demonym.GetValue(Model.Demonyms))
+                                <br>
+                            }
+                        }
+                    </dd>
+
+                    <dt class="col-sm-4">Bandera:</dt>
+                    <dd class="col-sm-8">
+                        @if (Model != null && Model.Flags != null)
+                        {
+                            <img src="@Model.Flags.Png" alt="Bandera de @(Model.Name != null ? Model.Name.Common : "País")" width="100">
+                        }
+                    </dd>
+
+                </dl>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Mapa y más detalles del país -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow h-100 py-2">
+            <div class="card-body">
+                <h5 class="card-title">Mapa y Detalles</h5>
+                <div id="mapa" style="height: 300px; background-color: #f8f9fc;"></div>
+                <!-- Agrega más detalles o elementos aquí -->
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Poblacion de @Model.Name.Common</h5>
+                <!-- Agrega gráficos o detalles adicionales aquí -->
+
+                <canvas id="populationChart" width="400" height="200"></canvas>
+
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+
+    <!-- Enlaza a la biblioteca Leaflet (CDN) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+        // Inicializar el mapa si hay coordenadas de latitud y longitud
+        // Inicializar el mapa
+        var mapContainer = document.getElementById('mapa');
+        var mymap = L.map(mapContainer).setView([@Model.Latlng[0], @Model.Latlng[1]], 6);
+
+        // Agregar capa de mapa base (por ejemplo, OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(mymap);
+
+
+    </script>
+    <script src="~/vendor/chart.js/Chart.min.js"></script>
+
+    <script>
+        document.getElementById('countryInput').addEventListener('input', function () {
+            var input = this;
+            var dataList = document.getElementById('countries');
+            var options = dataList.querySelectorAll('option');
+            var value = input.value.toLowerCase();
+
+            options.forEach(function (option) {
+                if (option.value.toLowerCase() === value) {
+                    input.value = option.value;
+                }
+            });
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        var population = @Html.Raw(Model.Population);
+
+        var ctx = document.getElementById('populationChart').getContext('2d');
+        var populationChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Población'],
+                datasets: [{
+                    label: 'Población',
+                    data: [population],
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+}
+
