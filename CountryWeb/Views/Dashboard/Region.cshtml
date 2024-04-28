@@ -26,12 +26,10 @@
         <table id="countryTable" class="table table-hover table-sm">
             <thead>
                 <tr>
+                    <th>Bandera</th>
                     <th>Nombre común</th>
                     <th>Nombre oficial</th>
-                    <th>Independiente</th>
                     <th>Región</th>
-                    <th>Subregión</th>
-                    <th>Población</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -41,32 +39,54 @@
     </div>
 
     <div class="modal fade" id="countryModal" tabindex="-1" role="dialog" aria-labelledby="countryModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="countryModalLabel">Detalles</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="card-body">
-                        <h5 class="card-title">Mapa y Detalles</h5>
-                        <div id="mapa" style="height: 300px; background-color: #f8f9fc;"></div>
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="countryModalLabel">Detalles del País</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="card-title mb-4">Detalles</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item"><strong>Nombre:</strong> <span id="countryName"></span></li>
+                                <li class="list-group-item"><strong>Independiente:</strong> <span id="countryIndependent"></span></li>
+                                <li class="list-group-item">
+                                    <strong>Monedas:</strong>
+                                    <ul id="countryCurrencies" class="pl-0">
+                                    </ul>
+                                </li>
+                            </ul>
+                            <div class="mt-4">
+                                <h5 class="card-title">Población</h5>
+                                <canvas id="populationChart" width="300" height="300"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
 </div>
 
+
+
+</div>
+
 @section Scripts{
     <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 
     <script>
         $(document).ready(function () {
@@ -90,12 +110,10 @@
                         countryTable.clear().draw();
                         response.forEach(function (countryData) {
                             var newRow = [
+                                '<img src="' + countryData.flags.png + '" alt="' + countryData.name.common + '" style="width: 50px; height: 30px;" />',
                                 countryData.name.common,
                                 countryData.name.official,
-                                countryData.independent ? "Sí" : "No",
                                 countryData.region,
-                                countryData.subregion,
-                                countryData.population,
                                 '<button type="button" class="btn btn-primary view-details" data-toggle="modal" data-target="#countryModal" data-country="' + countryData.name.common + '">Ver más</button>'
                             ];
                             countryTable.row.add(newRow).draw(false);
@@ -118,35 +136,39 @@
                 loadCountriesByRegion(region, regionName);
             });
 
-            $(document).on('click', '.view-details', function () {
+             $(document).on('click', '.view-details', function () {
                 var countryName = $(this).data('country');
                 var countryData = countriesData.find(c => c.name.common === countryName);
                 $('#countryModalLabel').text('Detalles de ' + countryData.name.common);
+                $('#countryName').text(countryData.name.common);
+                $('#countryIndependent').text(countryData.independent ? "Sí" : "No");
+                $('#countryCurrencies').empty();
+                $.each(countryData.currencies, function (index, currency) {
+                    $('#countryCurrencies').append('<li>' + currency.name + ' (' + currency.symbol + ')</li>');
+                });
 
-                var mapContainer = document.getElementById('mapa');
+                populationData = {
+                    labels: ['Población'],
+                    datasets: [{
+                        data: [countryData.population],
+                        backgroundColor: ['#36A2EB', '#FFCE56'],
+                    }]
+                 };
+                
+                 new Chart($('#populationChart'), {
+                    type: 'doughnut',
+                    data: populationData,
+                    options: {
+                        rsponsive: true,
+                        legend: {
+                            display: true,
+                             position: 'bottom',
+                       },
+                    }
+                });
 
-                // Destruir el mapa existente si ya está inicializado
-                if (mapContainer._leaflet_id) {
-                    mapContainer._leaflet_id = null;
-                }
 
-                // Eliminar todos los hijos del contenedor de mapa
-                while (mapContainer.firstChild) {
-                    mapContainer.removeChild(mapContainer.firstChild);
-                }
-
-                // Crear un nuevo contenedor para el mapa
-                var newMapContainer = document.createElement('div');
-                newMapContainer.id = 'mapa';
-                newMapContainer.style.height = '300px';
-                newMapContainer.style.width = '100%';
-                mapContainer.appendChild(newMapContainer);
-
-                // Inicializar un nuevo mapa con la información del país
-                var mymap = L.map(newMapContainer).setView([countryData.latlng[0], countryData.latlng[1]], 6);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                }).addTo(mymap);
+              
             });
         });
     </script>

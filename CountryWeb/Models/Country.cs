@@ -12,13 +12,9 @@ namespace CountryWeb.Models
 
 
         public Name Name { get; set; }
-
-        public List<string> Tld { get; set; }
         public string Cioc { get; set; }
         public bool Independent { get; set; }
-        public bool UnMember { get; set; }
         public Dictionary<string, Currency> Currencies { get; set; }
-        public Idd Idd { get; set; }
         public List<string> Capital { get; set; }
         public List<string> AltSpellings { get; set; }
         public string Region { get; set; }
@@ -28,10 +24,7 @@ namespace CountryWeb.Models
         public List<string> Borders { get; set; }
         public double Area { get; set; }
         public Demonyms Demonyms { get; set; }
-        public string Flag { get; set; }
-        public int Population { get; set; }
-        public Dictionary<string, double> Gini { get; set; }
-       
+        public int Population { get; set; }       
         public Flags Flags { get; set; }
        
  

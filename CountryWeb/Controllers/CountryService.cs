@@ -11,7 +11,7 @@ namespace CountryWeb.Services
         private readonly HttpClient _httpClient;
 
         private String _baseUrl = "https://restcountries.com/v3.1/";
-        private String _fieldsUrl = "?fields=name,flags,independent,officialNames,cioc,region,subregion,languages,latlng,borders,area,demonyms,idd,capital,currencies,population";
+        private String _fieldsUrl = "?fields=name,flags,independent,officialNames,cioc,region,subregion,languages,latlng,borders,area,demonyms,capital,currencies,population";
 
         public CountryService(HttpClient httpClient)
         {
